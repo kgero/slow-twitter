@@ -1,0 +1,15 @@
+{
+  "name": "Slow Twitter",
+  "version": "1.0",
+  "description": "Show one tweet at a time in a sea of white space",
+  "permissions": ["tabs", "<all_urls>"],
+  "content_scripts": [
+   {
+     "matches": ["http://*.twitter.com/*", "https://*.twitter.com/*"],
+     "js": ["main.js"],
+     "run_at": "document_end"
+   }
+ ],
+  "manifest_version": 2,
+  "web_accessible_resources": ["style.css"]
+}
