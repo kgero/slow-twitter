@@ -6,8 +6,8 @@
   "content_scripts": [
    {
      "matches": ["http://*.twitter.com/*", "https://*.twitter.com/*"],
-     "js": ["main.js"],
-     "run_at": "document_end"
+     "js": ["main.js"]
+     // "run_at": "document_end"
    }
  ],
   "manifest_version": 2,
