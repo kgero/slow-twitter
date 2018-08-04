@@ -39,10 +39,21 @@ function add_continue() {
   stream.parentNode.insertBefore(div, stream);
 }
 
-var dash = document.getElementsByClassName('dashboard');
-for(var i = 0; i < dash.length; i++) { 
-  dash[i].style.display='none'
+function hide_by_class(classname) {
+  var divs = document.getElementsByClassName(classname);
+  for (var i=0; i<divs.length; i++) {
+    divs[i].style.display='none';
+  }
 }
+
+// var dash = document.getElementsByClassName('dashboard');
+// for(var i = 0; i < dash.length; i++) { 
+//   dash[i].style.display='none'
+// }
+
+hide_by_class('dashboard');
+hide_by_class('SidebarCommonModules');
+
 
 // var tweet = document.getElementsByClassName('tweet');
 // for(var i = 1; i < tweet.length; i++) { 
