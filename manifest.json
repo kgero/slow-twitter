@@ -3,6 +3,10 @@
   "version": "1.0",
   "description": "Show one tweet at a time in a sea of white space",
   "permissions": ["tabs", "<all_urls>"],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
   "content_scripts": [
    {
      "matches": ["http://*.twitter.com/*", "https://*.twitter.com/*"],
