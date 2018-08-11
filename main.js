@@ -92,6 +92,7 @@ function poll(fn, timeout, interval) {
   return new Promise(checkCondition);
 }
 
+// from https://stackoverflow.com/questions/2844565/is-there-a-javascript-jquery-dom-change-listener/39508954#39508954
 document.head.appendChild(document.createElement('script')).text = '(' +
     function() {
         // injected DOM script is not a content script anymore, 
