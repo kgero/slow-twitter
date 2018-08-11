@@ -52,38 +52,47 @@ function run_on_page() {
   console.log('running on page!');
   
   var stream = document.getElementsByClassName('stream')[0];
-  if (typeof stream === "undefined") { console.log("can't find the stream!!!"); }
-  else { console.log('stream:', stream); }
-  stream.classList.add("oldstream");
-  stream.style.display='none';
+  if (!stream) {
+    console.log("can't find the stream!!!")
+  } else {
+    stream.classList.add("oldstream");
+    stream.style.display = 'none';
 
-  hide_by_class('trends');
-  hide_by_class('flex-module');
-  hide_by_class('SidebarCommonModules');
+    hide_by_class('trends');
+    hide_by_class('flex-module');
+    hide_by_class('SidebarCommonModules');
 
-  add_continue(stream);
-  add_tweet(stream);
-
+    add_continue(stream);
+    add_tweet(stream);
+  }
 }
 
+// polling function brought to you by https://davidwalsh.name/javascript-polling
 
+function poll(fn, timeout, interval) {
+  var endTime = Number(new Date()) + (timeout || 2000);
+  interval = interval || 100;
 
+  var checkCondition = function (resolve, reject) {
+    // If the condition is met, we're done! 
+    var result = fn();
+    if (result) {
+      resolve(result);
+    }
+    // If the condition isn't met but the timeout hasn't elapsed, go again
+    else if (Number(new Date()) < endTime) {
+      setTimeout(checkCondition, interval, resolve, reject);
+    }
+    // Didn't match and too much time, reject!
+    else {
+      reject(new Error('timed out for ' + fn + ': ' + arguments));
+    }
+  };
+
+  return new Promise(checkCondition);
+}
 
 // from https://stackoverflow.com/questions/2844565/is-there-a-javascript-jquery-dom-change-listener/39508954#39508954
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-  if (msg === 'url-update') {
-    console.log('url update!!!');
-  }
-});
-
-window.addEventListener('hashchange', function(e) {
-    console.log('URL hash changed', e);
-});
-
-window.addEventListener('popstate', function(e) {
-    console.log('State changed', e);
-});
-
 document.head.appendChild(document.createElement('script')).text = '(' +
     function() {
         // injected DOM script is not a content script anymore, 
@@ -99,9 +108,19 @@ document.head.appendChild(document.createElement('script')).text = '(' +
 // And here content script listens to our DOM script custom events
 window.addEventListener('state-changed', function(e) {
     console.log('History state changed', e.detail, location.hash);
-    if (e.detail.hasOwnProperty('inOverlay')) { console.log("don't do anything"); }
-    else { run_on_page(); }
+    if (e.detail.hasOwnProperty('inOverlay')) {
+      console.log("don't do anything");
+    } else {
+      poll(function () {
+        return document.querySelectorAll('.oldstream').length === 0;
+      }, 3000, 150)
+      .then(function () {
+        run_on_page();
+      })
+      .catch(function () {
+        console.warn('plugin failure: loading timed out')
+      });
+    }
 });
 
 run_on_page();
-
