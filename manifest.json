@@ -5,7 +5,7 @@
   "permissions": ["tabs", "<all_urls>"],
   "background": {
     "scripts": ["background.js"],
-    "persistent": false
+    "persistent": true
   },
   "content_scripts": [
    {
@@ -14,6 +14,5 @@
      "run_at": "document_end"
    }
  ],
-  "manifest_version": 2,
-  "web_accessible_resources": ["style.css"]
+  "manifest_version": 2
 }

@@ -1,10 +1,15 @@
 var count = 0;
 
 function add_tweet(stream) {
+  console.log('adding tweet; count:', count);
   var new_il = stream.children[0].children[count];
   count++;
   if (new_il.childNodes[1].classList.contains('promoted-tweet')) {
     console.log('skip the promoted tweet!');
+    new_il = stream.children[0].children[count];
+    count++;
+  } else if (new_il.classList.contains('has-recap')) {
+    console.log('skip the has-recap set of tweets');
     new_il = stream.children[0].children[count];
     count++;
   }
@@ -50,11 +55,13 @@ function hide_by_class(classname) {
 
 function run_on_page() {
   console.log('running on page!');
+  count = 0;
   
   var stream = document.getElementsByClassName('stream')[0];
   if (!stream) {
-    console.log("can't find the stream!!!")
+    console.log("can't find the stream!!!");
   } else {
+    console.log('found the stream!', stream);
     stream.classList.add("oldstream");
     stream.style.display = 'none';
 
@@ -70,7 +77,7 @@ function run_on_page() {
 // polling function brought to you by https://davidwalsh.name/javascript-polling
 
 function poll(fn, timeout, interval) {
-  var endTime = Number(new Date()) + (timeout || 2000);
+  var endTime = Number(new Date()) + (timeout || 5000);
   interval = interval || 100;
 
   var checkCondition = function (resolve, reject) {
@@ -85,12 +92,32 @@ function poll(fn, timeout, interval) {
     }
     // Didn't match and too much time, reject!
     else {
+      console.log('timed out');
       reject(new Error('timed out for ' + fn + ': ' + arguments));
     }
   };
 
   return new Promise(checkCondition);
 }
+
+function poll_for_stream() {
+  poll(function () {
+    return document.querySelectorAll('.oldstream').length === 0;
+  }, 5000, 150)
+  .then(function () {
+    run_on_page();
+  })
+  .catch(function () {
+    console.warn('plugin failure: loading timed out');
+  });
+}
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    if (msg === 'url-update') {
+      console.log('tab updated!');
+      poll_for_stream();
+    }
+});
 
 // from https://stackoverflow.com/questions/2844565/is-there-a-javascript-jquery-dom-change-listener/39508954#39508954
 document.head.appendChild(document.createElement('script')).text = '(' +
@@ -111,15 +138,7 @@ window.addEventListener('state-changed', function(e) {
     if (e.detail.hasOwnProperty('inOverlay')) {
       console.log("don't do anything");
     } else {
-      poll(function () {
-        return document.querySelectorAll('.oldstream').length === 0;
-      }, 3000, 150)
-      .then(function () {
-        run_on_page();
-      })
-      .catch(function () {
-        console.warn('plugin failure: loading timed out')
-      });
+      poll_for_stream();
     }
 });
 
