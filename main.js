@@ -10,8 +10,8 @@ function addTweet(stream) {
     contin = document.getElementById("continue");
 
   if (newIl.childNodes[1].classList.contains('promoted-tweet') || newIl.classList.contains('has-recap')) {
-    newIl = stream.children[0].children[count];
     count += 1;
+    newIl = stream.children[0].children[count];
   }
 
   var pixels = 300 + count * 50;
