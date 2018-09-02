@@ -1,84 +1,85 @@
 var count = 0;
 
-function add_tweet(stream) {
-  console.log('adding tweet; count:', count);
-  var new_il = stream.children[0].children[count];
-  count++;
-  if (new_il.childNodes[1].classList.contains('promoted-tweet')) {
-    console.log('skip the promoted tweet!');
-    new_il = stream.children[0].children[count];
-    count++;
-  } else if (new_il.classList.contains('has-recap')) {
-    console.log('skip the has-recap set of tweets');
-    new_il = stream.children[0].children[count];
-    count++;
+function addTweet(stream) {
+  count += 1;
+
+  var newIl = stream.children[0].children[count],
+    newStream = document.createElement("div"),
+    newOl = document.createElement("ol"),
+    whiteSpace = document.createElement("div"),
+    contin = document.getElementById("continue");
+
+  if (newIl.childNodes[1].classList.contains('promoted-tweet') || newIl.classList.contains('has-recap')) {
+    newIl = stream.children[0].children[count];
+    count += 1;
   }
-  var new_stream = document.createElement("div");
-  // new_stream.classList.add("stream");
-  new_stream.classList.add("katyhere");
-  var new_ol = document.createElement("ol");
-  new_ol.classList.add("stream-items");
-  new_ol.classList.add("js-navigable-stream");
+
+  var pixels = 300 + count * 50;
+
+  // newStream.classList.add("stream");
+  newStream.classList.add("katyhere");
+  newOl.classList.add("stream-items", "js-navigable-stream");
+
   // this id is what twitter hooks into to load more tweets!
   // so don't add it back in!!
-  // new_ol.id = "stream-items-id";
-  new_ol.appendChild(new_il);
-  new_stream.appendChild(new_ol);
-  new_stream.style.display='contents';
-  var white_space = document.createElement("div");
-  var pixels = 300 + count*50;
-  white_space.style.height=pixels.toString() + "px";
-  new_stream.appendChild(white_space);
-  var contin = document.getElementById("continue");
-  contin.parentNode.insertBefore(new_stream, contin);
+  // newOl.id = "stream-items-id";
+
+  newOl.appendChild(newIl);
+  newStream.appendChild(newOl);
+  newStream.style.display = 'contents';
+
+  whiteSpace.style.height = `${pixels}px`;
+  newStream.appendChild(whiteSpace);
+
+  contin.parentNode.insertBefore(newStream, contin);
 }
 
-function add_continue(stream) {
-  var div = document.createElement("div");
-  var contin = document.createElement("p");
-  var text = document.createTextNode("continue?");
+function addContinueLink(stream) {
+  var div = document.createElement("div"),
+    contin = document.createElement("p"),
+    text = document.createTextNode("continue?");
+
   contin.appendChild(text);
   contin.classList.add("lead");
-  contin.addEventListener('click', function() { add_tweet(stream); });
+  contin.addEventListener('click', function() { addTweet(stream); });
+
   div.appendChild(contin);
   div.id = "continue";
   stream.parentNode.insertBefore(div, stream);
 }
 
-function hide_by_class(classname) {
-  var divs = document.getElementsByClassName(classname);
-  for (var i=0; i<divs.length; i++) {
+function hideElementsByClass(className) {
+  var divs = document.getElementsByClassName(className);
+  for (var i=0; i<divs.length; i += 1) {
     divs[i].style.display='none';
   }
-  console.log('hiding divs:', divs);
 }
 
-function run_on_page() {
-  console.log('running on page!');
+function initPage() {
   count = 0;
   
   var stream = document.getElementsByClassName('stream')[0];
   if (!stream) {
-    console.log("can't find the stream!!!");
+    console.warn("unable to find stream");
   } else {
-    console.log('found the stream!', stream);
     stream.classList.add("oldstream");
     stream.style.display = 'none';
 
-    hide_by_class('trends');
-    hide_by_class('flex-module');
-    hide_by_class('SidebarCommonModules');
+    hideElementsByClass('trends');
+    hideElementsByClass('flex-module');
+    hideElementsByClass('SidebarCommonModules');
 
-    add_continue(stream);
-    add_tweet(stream);
+    addContinueLink(stream);
+    addTweet(stream);
   }
 }
 
 // polling function brought to you by https://davidwalsh.name/javascript-polling
 
 function poll(fn, timeout, interval) {
-  var endTime = Number(new Date()) + (timeout || 5000);
   interval = interval || 100;
+
+  var endTime = Number(new Date()) + (timeout || 5000);
 
   var checkCondition = function (resolve, reject) {
     // If the condition is met, we're done! 
@@ -92,7 +93,7 @@ function poll(fn, timeout, interval) {
     }
     // Didn't match and too much time, reject!
     else {
-      console.log('timed out');
+      console.error('error: polling condition check timed out');
       reject(new Error('timed out for ' + fn + ': ' + arguments));
     }
   };
@@ -100,46 +101,50 @@ function poll(fn, timeout, interval) {
   return new Promise(checkCondition);
 }
 
-function poll_for_stream() {
-  poll(function () {
-    return document.querySelectorAll('.oldstream').length === 0;
-  }, 5000, 150)
-  .then(function () {
-    run_on_page();
-  })
-  .catch(function () {
-    console.warn('plugin failure: loading timed out');
-  });
+function pollStream() {
+  if (count > 1) {
+    poll(function () {
+      return document.querySelectorAll('.oldstream').length === 0;
+    }, 5000, 150)
+      .then(function () {
+        initPage();
+      })
+      .catch(function () {
+        console.warn('plugin failure: loading timed out');
+      });
+  }
 }
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     if (msg === 'url-update') {
-      console.log('tab updated!');
-      poll_for_stream();
+      pollStream();
     }
 });
 
+// Commented this during testing. Found that the URL change which indicated also a state change would trigger the new
+// stream.
+//
 // from https://stackoverflow.com/questions/2844565/is-there-a-javascript-jquery-dom-change-listener/39508954#39508954
-document.head.appendChild(document.createElement('script')).text = '(' +
-    function() {
-        // injected DOM script is not a content script anymore, 
-        // it can modify objects and functions of the page
-        var _pushState = history.pushState;
-        history.pushState = function(state, title, url) {
-            _pushState.call(this, state, title, url);
-            window.dispatchEvent(new CustomEvent('state-changed', {detail: state}));
-        };
-        // repeat the above for replaceState too
-    } + ')(); this.remove();'; // remove the DOM script element
+// document.head.appendChild(document.createElement('script')).text = '(' +
+//     function() {
+//         // injected DOM script is not a content script anymore, 
+//         // it can modify objects and functions of the page
+//         var _pushState = history.pushState;
+//         history.pushState = function(state, title, url) {
+//             _pushState.call(this, state, title, url);
+//             window.dispatchEvent(new CustomEvent('state-changed', {detail: state}));
+//         };
+//         this.remove();
+//         // repeat the above for replaceState too
+//     } + ')(); this.remove();'; // remove the DOM script element
 
 // And here content script listens to our DOM script custom events
-window.addEventListener('state-changed', function(e) {
-    console.log('History state changed', e.detail, location.hash);
-    if (e.detail.hasOwnProperty('inOverlay')) {
-      console.log("don't do anything");
-    } else {
-      poll_for_stream();
-    }
-});
+// window.addEventListener('state-changed', function(e) {
+//     if (e.detail.hasOwnProperty('inOverlay')) {
+//       console.log("don't do anything");
+//     } else {
+//       pollStream();
+//     }
+// });
 
-run_on_page();
+initPage();
