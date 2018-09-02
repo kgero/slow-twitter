@@ -56,6 +56,12 @@ function hideElementsByClass(className) {
 }
 
 function initPage() {
+  console.log('running init!');
+  if (window.location.toString().indexOf('i/notifications') !== -1) {
+    console.log("on the notifications page!");
+    return;
+  }
+
   count = 0;
   
   var stream = document.getElementsByClassName('stream')[0];
